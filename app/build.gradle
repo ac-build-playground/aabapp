@@ -21,10 +21,13 @@ android {
         }
     }
 
+    bundle {
+        density.enableSplit = true
+        abi.enableSplit = true
+        language.enableSplit = false
+    }
 
     dynamicFeatures = [":dynamic_feature"]
-
-
 }
 
 dependencies {
