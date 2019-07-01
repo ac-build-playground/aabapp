@@ -20,7 +20,7 @@ class AppCenterProjectEvaluationListener implements ProjectEvaluationListener {
 
     @Override
     void afterEvaluate(Project project, ProjectState state) {
-        if (!project.plugins.hasPlugin("com.android.application") || !(System.getProperty("MOBILECENTER_BUILD_VERSION") || System.getProperty("APPCENTER_BUILD_VERSION"))) {
+        if (!(project.plugins.hasPlugin("com.android.application") || project.plugins.hasPlugin("com.android.dynamic-feature"))|| !(System.getProperty("MOBILECENTER_BUILD_VERSION") || System.getProperty("APPCENTER_BUILD_VERSION"))) {
             // No Android app or no build version set, don't run
             project.logger.warn("Project ${project.name} at ${project.path} is either no Android app project or build version has not been set to override. Skipping...")
             return
@@ -81,40 +81,21 @@ class AppCenterProjectEvaluationListener implements ProjectEvaluationListener {
                 variantOutput.setVersionCodeOverride(newVersionCode)
             }
 
-            // additional manifest for bundle
-            if (processManifest.hasProperty('bundleManifestOutputDirectory')) {
-                project.logger.debug("Variant output responds to 'bundleManifestOutputDirectory'")
-
-                File targetDirectory
-                def outputDirectory = processManifest.bundleManifestOutputDirectory
-                if (outputDirectory instanceof File) {
-                    targetDirectory = outputDirectory
-                } else {
-                    targetDirectory = outputDirectory.get().asFile
+            ['bundleManifestOutputDirectory', 'metadataFeatureManifestOutputDirectory', 'instantAppManifestOutputDirectory'].each { target ->
+                if (processManifest.hasProperty(target)) {
+                    project.logger.debug("Variant output responds to '${target}'")
+                    File targetDirectory
+                    def outputDirectory = processManifest[target]
+                    if (outputDirectory instanceof File) {
+                        targetDirectory = outputDirectory
+                    } else {
+                        targetDirectory = outputDirectory.get().asFile
+                    }
+                    File testManifestFile = new File(targetDirectory.toString(), "AndroidManifest.xml")
+                    // we need to find the right manifest file - only the one for the built variant will exist
+                    project.logger.warn("Intermediate AndroidManifest.xml to be stored at ${testManifestFile.absolutePath}")
+                    manifestFiles.add(testManifestFile)
                 }
-
-                File testManifestFile = new File(targetDirectory.toString(), "AndroidManifest.xml")
-                // we need to find the right manifest file - only the one for the built variant will exist
-                project.logger.warn("Intermediate AndroidManifest.xml to be stored at ${testManifestFile.absolutePath}")
-                manifestFiles.add(testManifestFile)
-            }
-
-            // additional manifest for bundle
-            if (processManifest.hasProperty('instantAppManifestOutputDirectory')) {
-                project.logger.debug("Variant output responds to 'instantAppManifestOutputDirectory'")
-
-                File targetDirectory
-                def outputDirectory = processManifest.instantAppManifestOutputDirectory
-                if (outputDirectory instanceof File) {
-                    targetDirectory = outputDirectory
-                } else {
-                    targetDirectory = outputDirectory.get().asFile
-                }
-
-                File testManifestFile = new File(targetDirectory.toString(), "AndroidManifest.xml")
-                // we need to find the right manifest file - only the one for the built variant will exist
-                project.logger.warn("Intermediate AndroidManifest.xml to be stored at ${testManifestFile.absolutePath}")
-                manifestFiles.add(testManifestFile)
             }
 
             project.logger.info("Manifest file paths to consider: ${manifestFiles}")
