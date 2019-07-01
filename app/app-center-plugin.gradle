@@ -99,6 +99,24 @@ class AppCenterProjectEvaluationListener implements ProjectEvaluationListener {
                 manifestFiles.add(testManifestFile)
             }
 
+            // additional manifest for bundle
+            if (processManifest.hasProperty('instantAppManifestOutputDirectory')) {
+                project.logger.debug("Variant output responds to 'instantAppManifestOutputDirectory'")
+
+                File targetDirectory
+                def outputDirectory = processManifest.instantAppManifestOutputDirectory
+                if (outputDirectory instanceof File) {
+                    targetDirectory = outputDirectory
+                } else {
+                    targetDirectory = outputDirectory.get().asFile
+                }
+
+                File testManifestFile = new File(targetDirectory.toString(), "AndroidManifest.xml")
+                // we need to find the right manifest file - only the one for the built variant will exist
+                project.logger.warn("Intermediate AndroidManifest.xml to be stored at ${testManifestFile.absolutePath}")
+                manifestFiles.add(testManifestFile)
+            }
+
             project.logger.info("Manifest file paths to consider: ${manifestFiles}")
 
             manifestFiles.eachWithIndex { manifestFile, index ->
