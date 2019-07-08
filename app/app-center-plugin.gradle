@@ -84,6 +84,7 @@ class AppCenterProjectEvaluationListener implements ProjectEvaluationListener {
             ['bundleManifestOutputDirectory', 'metadataFeatureManifestOutputDirectory', 'instantAppManifestOutputDirectory'].each { target ->
                 if (processManifest.hasProperty(target)) {
                     project.logger.debug("Variant output responds to '${target}'")
+
                     File targetDirectory
                     def outputDirectory = processManifest[target]
                     if (outputDirectory instanceof File) {
@@ -91,6 +92,7 @@ class AppCenterProjectEvaluationListener implements ProjectEvaluationListener {
                     } else {
                         targetDirectory = outputDirectory.get().asFile
                     }
+
                     File testManifestFile = new File(targetDirectory.toString(), "AndroidManifest.xml")
                     // we need to find the right manifest file - only the one for the built variant will exist
                     project.logger.warn("Intermediate AndroidManifest.xml to be stored at ${testManifestFile.absolutePath}")
@@ -114,8 +116,13 @@ class AppCenterProjectEvaluationListener implements ProjectEvaluationListener {
                 manifestTask.mustRunAfter processManifest
 
                 def processResources = variantOutput.hasProperty('processResourcesProvider') ? variantOutput.processResourcesProvider.get() : variantOutput.processResources
-
                 processResources.dependsOn manifestTask
+
+                def bundleResources = project.tasks.find{ it.name.contains("bundle${variantName}Resources") }
+                if (bundleResources) {
+                    bundleResources.dependsOn manifestTask
+                }
+
                 project.logger.debug("Installed processing task for variant ${variant.name}")
             }
         }
