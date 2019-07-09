@@ -20,7 +20,7 @@ class AppCenterProjectEvaluationListener implements ProjectEvaluationListener {
 
     @Override
     void afterEvaluate(Project project, ProjectState state) {
-        if (!(project.plugins.hasPlugin("com.android.application") || project.plugins.hasPlugin("com.android.dynamic-feature")) || !(System.getProperty("MOBILECENTER_BUILD_VERSION") || System.getProperty("APPCENTER_BUILD_VERSION"))) {
+        if (!project.plugins.hasPlugin("com.android.application") || !(System.getProperty("MOBILECENTER_BUILD_VERSION") || System.getProperty("APPCENTER_BUILD_VERSION"))) {
             // No Android app or no build version set, don't run
             project.logger.warn("Project ${project.name} at ${project.path} is either no Android app project or build version has not been set to override. Skipping...")
             return
@@ -81,7 +81,7 @@ class AppCenterProjectEvaluationListener implements ProjectEvaluationListener {
                 variantOutput.setVersionCodeOverride(newVersionCode)
             }
 
-            ['bundleManifestOutputDirectory', 'metadataFeatureManifestOutputDirectory', 'instantAppManifestOutputDirectory'].each { target ->
+            ['bundleManifestOutputDirectory', 'instantAppManifestOutputDirectory'].each { target ->
                 if (processManifest.hasProperty(target)) {
                     project.logger.debug("Variant output responds to '${target}'")
 
@@ -119,7 +119,8 @@ class AppCenterProjectEvaluationListener implements ProjectEvaluationListener {
 
                 processResources.dependsOn manifestTask
 
-                def bundleResources = project.tasks.find{ it.name.contains("bundle${variantName}Resources") }
+                // for AAB we need to update manifests before "bundle<Variant>Resources" task
+                def bundleResources = project.tasks.find { it.name.contains("bundle${variantName}Resources") }
                 if (bundleResources) {
                     bundleResources.dependsOn manifestTask
                 }
